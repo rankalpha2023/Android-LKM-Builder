@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p $HOME/gcc
           # 下载 GCC 工具链并解压到 $HOME/gcc 目录下
-          wget -O gcc-toolchain.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz{{ env.GCC_VERSION }}.tar.gz
+          wget -O gcc-toolchain.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
           tar -xvf gcc-toolchain.tar.gz -C $HOME/gcc --strip-components=1
           # 将 GCC 工具链路径添加到 PATH 中
           echo "export PATH=$HOME/gcc/bin:$PATH" >> $HOME/.bashrc
