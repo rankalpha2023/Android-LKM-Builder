@@ -29,8 +29,14 @@ jobs:
       - name: Download and extract toolchain
         run: |
           mkdir -p toolchain
-          curl -L https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android11-release/clang-r383902b.tar.gz | tar xz -C toolchain --strip-components=1
+          curl -L https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz | tar xz -C toolchain --strip-components=1
           export PATH=$PWD/toolchain/bin:$PATH
+
+      - name: Set up custom GCC
+        run: |
+          export CC=aarch64-linux-android-gcc
+          export LD=aarch64-linux-android-ld
+          export CROSS_COMPILE=aarch64-linux-android-
 
       - name: Set up kernel environment
         run: |
@@ -39,26 +45,21 @@ jobs:
           git checkout chopin-r-oss
           export ARCH=arm64
           export SUBARCH=arm64
-          # Use the downloaded toolchain
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          # Use chopin_user_defconfig
           cp arch/arm64/configs/chopin_user_defconfig .config
-          # Add any other setup commands needed to prepare the environment for building the kernel
+          make olddefconfig
 
       - name: Build LKM
         run: |
           cd kernel_xiaomi_chopin
-          make ARCH=arm64 SUBARCH=arm64 olddefconfig modules || true
+          make ARCH=arm64 SUBARCH=arm64 modules
 
       - name: Upload kernel modules
-        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: kernel_modules
           path: kernel_xiaomi_chopin/*.ko
 
       - name: Clean up workspace
-        if: always()
         run: |
           cd ..
           rm -rf kernel_xiaomi_chopin
