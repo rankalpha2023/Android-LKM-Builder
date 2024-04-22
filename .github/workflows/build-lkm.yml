@@ -35,10 +35,14 @@ jobs:
 
       - name: Set up GCC environment
         run: |
-          export PATH=$PWD/toolchain/bin:$PATH
-          export CC=aarch64-linux-android-gcc
-          export LD=aarch64-linux-android-ld
-          export CROSS_COMPILE=aarch64-linux-android-
+          echo "export PATH=$PWD/toolchain/bin:$PATH" >> $GITHUB_ENV
+          echo "export CC=aarch64-linux-android-gcc" >> $GITHUB_ENV
+          echo "export LD=aarch64-linux-android-ld" >> $GITHUB_ENV
+          echo "export CROSS_COMPILE=aarch64-linux-android-" >> $GITHUB_ENV
+
+      - name: Load GCC environment
+        run: |
+          source $GITHUB_ENV
 
       - name: Set up kernel environment
         run: |
