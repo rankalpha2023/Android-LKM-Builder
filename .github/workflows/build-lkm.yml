@@ -26,14 +26,16 @@ jobs:
           sudo sysctl vm.swappiness=10
           sudo sysctl vm.vfs_cache_pressure=50
 
-      - name: Download and extract GCC toolchain
+      - name: Download GCC toolchain
         run: |
+          curl -L https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz -o toolchain.tar.gz
           mkdir -p toolchain
-          curl -L https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz | tar xz -C toolchain --strip-components=1
-          export PATH=$PWD/toolchain/bin:$PATH
+          tar -xzvf toolchain.tar.gz -C toolchain --strip-components=1
+          rm toolchain.tar.gz
 
-      - name: Set up custom GCC
+      - name: Set up GCC environment
         run: |
+          export PATH=$PWD/toolchain/bin:$PATH
           export CC=aarch64-linux-android-gcc
           export LD=aarch64-linux-android-ld
           export CROSS_COMPILE=aarch64-linux-android-
