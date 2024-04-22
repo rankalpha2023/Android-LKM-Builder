@@ -26,7 +26,7 @@ jobs:
           sudo sysctl vm.swappiness=10
           sudo sysctl vm.vfs_cache_pressure=50
 
-      - name: Download and extract toolchain
+      - name: Download and extract GCC toolchain
         run: |
           mkdir -p toolchain
           curl -L https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz | tar xz -C toolchain --strip-components=1
