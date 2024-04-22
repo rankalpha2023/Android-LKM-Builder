@@ -11,7 +11,6 @@ on:
 jobs:
   build-lkm:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -28,21 +27,14 @@ jobs:
 
       - name: Download GCC toolchain
         run: |
-          curl -L https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz -o toolchain.tar.gz
-          mkdir -p toolchain
-          tar -xzvf toolchain.tar.gz -C toolchain --strip-components=1
-          rm toolchain.tar.gz
-
-    - name: Download and setup GCC toolchain
-      run: |
-        mkdir -p $HOME/gcc
-        # 下载 GCC 工具链并解压到 $HOME/gcc 目录下
-        wget -O gcc-toolchain.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/${{ env.GCC_VERSION }}.tar.gz
-        tar -xvf gcc-toolchain.tar.gz -C $HOME/gcc --strip-components=1
-        # 将 GCC 工具链路径添加到 PATH 中
-        echo "export PATH=$HOME/gcc/bin:$PATH" >> $HOME/.bashrc
-        # 如果需要设置其他环境变量，可以在这里添加
-        source $HOME/.bashrc
+          mkdir -p $HOME/gcc
+          # 下载 GCC 工具链并解压到 $HOME/gcc 目录下
+          wget -O gcc-toolchain.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/${{ env.GCC_VERSION }}.tar.gz
+          tar -xvf gcc-toolchain.tar.gz -C $HOME/gcc --strip-components=1
+          # 将 GCC 工具链路径添加到 PATH 中
+          echo "export PATH=$HOME/gcc/bin:$PATH" >> $HOME/.bashrc
+          # 如果需要设置其他环境变量，可以在这里添加
+          source $HOME/.bashrc
 
       - name: Set up kernel environment
         run: |
@@ -70,5 +62,3 @@ jobs:
           cd ..
           rm -rf kernel_xiaomi_chopin
           rm -rf toolchain
-
-      # Add any additional steps as needed, such as testing or deploying the LKM
