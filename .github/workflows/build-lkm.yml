@@ -16,6 +16,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set up swap space
+        run: |
+          sudo fallocate -l 10G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+          sudo sysctl vm.swappiness=10
+          sudo sysctl vm.vfs_cache_pressure=50
+
       - name: Download and extract toolchain
         run: |
           mkdir -p toolchain
@@ -37,5 +47,17 @@ jobs:
         run: |
           cd kernel_xiaomi_chopin
           make ARCH=arm64 SUBARCH=arm64 modules
+
+      - name: Upload kernel modules
+        uses: actions/upload-artifact@v2
+        with:
+          name: kernel_modules
+          path: kernel_xiaomi_chopin/*.ko
+
+      - name: Clean up workspace
+        run: |
+          cd ..
+          rm -rf kernel_xiaomi_chopin
+          rm -rf toolchain
 
       # Add any additional steps as needed, such as testing or deploying the LKM
