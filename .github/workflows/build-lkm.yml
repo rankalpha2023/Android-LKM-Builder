@@ -33,13 +33,16 @@ jobs:
           tar -xzvf toolchain.tar.gz -C toolchain --strip-components=1
           rm toolchain.tar.gz
 
-      - name: Set up GCC environment
-        run: |
-          echo "export PATH=$PWD/toolchain/bin:$PATH" >> $HOME/.bashrc
-          echo "export CC=aarch64-linux-android-gcc" >> $HOME/.bashrc
-          echo "export LD=aarch64-linux-android-ld" >> $HOME/.bashrc
-          echo "export CROSS_COMPILE=aarch64-linux-android-" >> $HOME/.bashrc
-          source $HOME/.bashrc
+    - name: Download and setup GCC toolchain
+      run: |
+        mkdir -p $HOME/gcc
+        # 下载 GCC 工具链并解压到 $HOME/gcc 目录下
+        wget -O gcc-toolchain.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/${{ env.GCC_VERSION }}.tar.gz
+        tar -xvf gcc-toolchain.tar.gz -C $HOME/gcc --strip-components=1
+        # 将 GCC 工具链路径添加到 PATH 中
+        echo "export PATH=$HOME/gcc/bin:$PATH" >> $HOME/.bashrc
+        # 如果需要设置其他环境变量，可以在这里添加
+        source $HOME/.bashrc
 
       - name: Set up kernel environment
         run: |
