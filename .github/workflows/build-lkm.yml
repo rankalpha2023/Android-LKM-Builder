@@ -1,64 +1,68 @@
-name: Build LKM for Custom Kernel
+name: Build KernelSU LKM
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  build-lkm:
+  build:
+    name: Build KernelSU LKM by ${{ github.actor }}
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up swap space
+      - name: Install Dependencies
         run: |
-          sudo fallocate -l 10G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
-          sudo sysctl vm.swappiness=10
-          sudo sysctl vm.vfs_cache_pressure=50
+          sudo apt-get update
+          sudo apt-get install -y libelf-dev libssl-dev gcc make bison flex bc crossbuild-essential-arm64
 
-      - name: Download GCC toolchain
+      - name: Clone Kernel Source
         run: |
-          mkdir -p $HOME/gcc
-          # 下载 GCC 工具链并解压到 $HOME/gcc 目录下
-          wget -O gcc-toolchain.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
-          tar -xvf gcc-toolchain.tar.gz -C $HOME/gcc --strip-components=1
-          # 将 GCC 工具链路径添加到 PATH 中
-          echo "export PATH=$HOME/gcc/bin:$PATH" >> $HOME/.bashrc
-          # 如果需要设置其他环境变量，可以在这里添加
-          source $HOME/.bashrc
+          git clone --depth=1 -b miui-t https://github.com/tanz3/kernel_xiaomi_sm8350-miui kernel
 
-      - name: Set up kernel environment
+      - name: Clone KernelSU Source
         run: |
-          git clone https://github.com/Yuyuko1024/kernel_xiaomi_chopin.git
-          cd kernel_xiaomi_chopin
-          git checkout chopin-r-oss
-          export ARCH=arm64
-          export SUBARCH=arm64
-          cp arch/arm64/configs/chopin_user_defconfig .config
-          make olddefconfig
+          cd kernel
+          git submodule add https://github.com/tiann/KernelSU.git
+          git submodule update --init --recursive
 
-      - name: Build LKM
+      - name: Check Kernel Source Directory
         run: |
-          cd kernel_xiaomi_chopin
-          make ARCH=arm64 SUBARCH=arm64 modules
+          ls -la kernel
+          ls -la kernel/KernelSU
 
-      - name: Upload kernel modules
+      - name: Add KernelSU as a Git Submodule
+        run: |
+          cd kernel
+          if [ ! -d "drivers/kernelsu" ]; then
+            mkdir -p drivers/kernelsu
+            cp -r KernelSU/kernel/* drivers/kernelsu/
+          fi
+
+      - name: Setup KernelSU
+        run: |
+          DRIVER_MAKEFILE=kernel/drivers/Makefile
+          DRIVER_KCONFIG=kernel/drivers/Kconfig
+          grep -q "kernelsu" "$DRIVER_MAKEFILE" || echo "obj-\$(CONFIG_KSU) += kernelsu/" >> "$DRIVER_MAKEFILE"
+          grep -q "kernelsu" "$DRIVER_KCONFIG" || sed -i "/endmenu/i\\source \"drivers/kernelsu/Kconfig\"" "$DRIVER_KCONFIG"
+
+      - name: Configure Kernel for ARM64
+        run: |
+          cd kernel
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+          scripts/config --enable SECURITY
+          scripts/config --enable SECURITY_SELINUX
+          scripts/config --module SECURITY_SELINUX
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- oldconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- prepare
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
+
+      - name: Build KernelSU LKM for ARM64
+        run: |
+          cd kernel
+          export KSU_GIT_VERSION=$(git -C drivers/kernelsu rev-parse HEAD)
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=drivers/kernelsu
+
+      - name: Upload Kernel Modules
         uses: actions/upload-artifact@v2
         with:
-          name: kernel_modules
-          path: kernel_xiaomi_chopin/*.ko
-
-      - name: Clean up workspace
-        run: |
-          cd ..
-          rm -rf kernel_xiaomi_chopin
-          rm -rf toolchain
+          name: kernelsu_lkm
+          path: kernel/drivers/kernelsu/*.ko
