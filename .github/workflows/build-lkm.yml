@@ -42,7 +42,9 @@ jobs:
         run: |
           cd kernel
           if [ ! -d "drivers/kernelsu" ]; then
-            ln -sf kernel/KernelSU/kernel kernel/drivers/kernelsu
+            cd kernel/drivers
+            mkdir kernelsu
+            cp -r ../../KernelSU/kernel/* kernelsu/
           fi
 
       - name: Configure Kernel for ARM64
