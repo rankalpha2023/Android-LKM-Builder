@@ -33,8 +33,8 @@ jobs:
 
       - name: Setup KernelSU
         run: |
-          DRIVER_MAKEFILE=kernel/drivers/Makefile
-          DRIVER_KCONFIG=kernel/drivers/Kconfig
+          DRIVER_MAKEFILE=kernel/KernelSU/kernel/Makefile
+          DRIVER_KCONFIG=kernel/KernelSU/kernel/Kconfig
           grep -q "kernelsu" "$DRIVER_MAKEFILE" || echo "obj-\$(CONFIG_KSU) += kernelsu/" >> "$DRIVER_MAKEFILE"
           grep -q "kernelsu" "$DRIVER_KCONFIG" || sed -i "/endmenu/i\\source \"drivers/kernelsu/Kconfig\"" "$DRIVER_KCONFIG"
 
@@ -42,9 +42,8 @@ jobs:
         run: |
           cd kernel
           if [ ! -d "drivers/kernelsu" ]; then
-            cd drivers
-            mkdir kernelsu
-            cp -r ../KernelSU/kernel/* kernelsu/
+            ln -sf kernel/KernelSU/kernel kernel/drivers/kernelsu
+           
           fi
 
       - name: Configure Kernel for ARM64
