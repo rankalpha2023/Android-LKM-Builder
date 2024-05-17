@@ -42,7 +42,7 @@ jobs:
         run: |
           cd kernel
           if [ ! -d "drivers/kernelsu" ]; then
-          cd kernel/drivers
+          cd drivers
             mkdir kernelsu
             ln -sf kernel/KernelSU/kernel kernel/drivers/kernelsu
            
