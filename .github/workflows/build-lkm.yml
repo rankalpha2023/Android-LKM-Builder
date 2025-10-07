@@ -16,41 +16,41 @@ jobs:
 
       - name: Clone Kernel Source
         run: |
-          mkdir -p /workspace/kernel
-          cd /workspace
+          mkdir -p $GITHUB_WORKSPACE/kernel
+          cd $GITHUB_WORKSPACE
           git clone https://github.com/ArrowOS-Devices/android_kernel_xiaomi_sdm660 --depth=1 -b arrow-13.1 kernel
 
       - name: Clone LKM Source
         run: |
-          cd /workspace/kernel
+          cd $GITHUB_WORKSPACE/kernel
           git submodule add https://github.com/rankalpha2023/hardware-breakpoint.git
           git submodule update --init --recursive
 
       - name: Download Clang-aosp
         run: |
-          cd /workspace
+          cd $GITHUB_WORKSPACE
           git clone https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone/ -b 18 clang-aosp --depth=1
           
       - name: Download Gcc-aosp-64
         run: |
-          cd /workspace
+          cd $GITHUB_WORKSPACE
           mkdir -p gcc-64
           wget -O gcc-aarch64.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-10.0.0_r47.tar.gz
           tar -C gcc-64/ -zxvf gcc-aarch64.tar.gz
-          export GCC_64=CROSS_COMPILE=/workspace/gcc-64/bin/aarch64-linux-android-
+          export GCC_64=CROSS_COMPILE=$GITHUB_WORKSPACE/gcc-64/bin/aarch64-linux-android-
 
       - name: Download Gcc-aosp-32
         run: |
-          cd /workspace
+          cd $GITHUB_WORKSPACE
           mkdir -p gcc-32
           wget -O gcc-arm.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-10.0.0_r47.tar.gz
           tar -C gcc-32/ -zxvf gcc-arm.tar.gz
-          export GCC_32=CROSS_COMPILE_ARM32=/workspace/gcc-32/bin/arm-linux-androideabi-
+          export GCC_32=CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/gcc-32/bin/arm-linux-androideabi-
 
       - name: Build Android LKM for ARM64
         run: |
-          cd /workspace/kernel
-          export PATH=/workspace/clang-aosp/bin:/workspace/gcc-64:/workspace/gcc-32:$PATH
+          cd $GITHUB_WORKSPACE/kernel
+          export PATH=$GITHUB_WORKSPACE/clang-aosp/bin:$GITHUB_WORKSPACE/gcc-64:$GITHUB_WORKSPACE/gcc-32:$PATH
           make -j$(nproc --all) CC=clang O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- KCFLAGS="-Wno-error=strict-prototypes" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- lavender_defconfig
           make -j$(nproc --all) CC=clang O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- KCFLAGS="-Wno-error=strict-prototypes" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
@@ -58,4 +58,4 @@ jobs:
         uses: actions/upload-artifact@main
         with:
           name: hw-break
-          path: /workspace/kernel/hardware-breakpoint/*.ko
+          path: $GITHUB_WORKSPACE/kernel/hardware-breakpoint/*.ko
