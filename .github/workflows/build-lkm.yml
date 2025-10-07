@@ -27,10 +27,12 @@ jobs:
           git submodule update --init --recursive
 
       - name: Download Clang-aosp
+        run: |
           cd /workspace
           git clone https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone/ -b 18 clang-aosp --depth=1
           
       - name: Download Gcc-aosp-64
+        run: |
           cd /workspace
           mkdir -p gcc-64
           wget -O gcc-aarch64.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-10.0.0_r47.tar.gz
@@ -38,6 +40,7 @@ jobs:
           export GCC_64=CROSS_COMPILE=/workspace/gcc-64/bin/aarch64-linux-android-
 
       - name: Download Gcc-aosp-32
+        run: |
           cd /workspace
           mkdir -p gcc-32
           wget -O gcc-arm.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-10.0.0_r47.tar.gz
