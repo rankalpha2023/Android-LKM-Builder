@@ -1,72 +1,58 @@
-name: Build KernelSU LKM
+name: Build Android LKM
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build KernelSU LKM by ${{ github.actor }}
+    name: Build Android LKM by ${{ github.actor }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libelf-dev libssl-dev gcc make bison flex bc crossbuild-essential-arm64
+          sudo apt-get install -y git ccache automake python3 flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler 
 
       - name: Clone Kernel Source
         run: |
-          git clone --depth=1 -b miui-t https://github.com/tanz3/kernel_xiaomi_sm8350-miui kernel
+          mkdir -p /workspace/kernel
+          cd /workspace
+          git clone https://github.com/ArrowOS-Devices/android_kernel_xiaomi_sdm660 --depth=1 -b arrow-13.1 kernel
 
-
-      - name: Clone KernelSU Source
+      - name: Clone LKM Source
         run: |
-          cd kernel
-          git submodule add https://github.com/tiann/KernelSU.git
+          cd /workspace/kernel
+          git submodule add https://github.com/rankalpha2023/hardware-breakpoint.git
           git submodule update --init --recursive
 
+      - name: Download Clang-aosp
+          cd /workspace
+          git clone https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone/ -b 18 clang-aosp --depth=1
+          
+      - name: Download Gcc-aosp-64
+          cd /workspace
+          mkdir -p gcc-64
+          wget -O gcc-aarch64.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-10.0.0_r47.tar.gz
+          tar -C gcc-64/ -zxvf gcc-aarch64.tar.gz
+          export GCC_64=CROSS_COMPILE=/workspace/gcc-64/bin/aarch64-linux-android-
 
-      - name: Check Kernel Source Directory
-        run: |
-          ls -la kernel
-          ls -la kernel/KernelSU
+      - name: Download Gcc-aosp-32
+          cd /workspace
+          mkdir -p gcc-32
+          wget -O gcc-arm.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-10.0.0_r47.tar.gz
+          tar -C gcc-32/ -zxvf gcc-arm.tar.gz
+          export GCC_32=CROSS_COMPILE_ARM32=/workspace/gcc-32/bin/arm-linux-androideabi-
 
-      - name: Setup KernelSU
+      - name: Build Android LKM for ARM64
         run: |
-          DRIVER_MAKEFILE=kernel/KernelSU/kernel/Makefile
-          DRIVER_KCONFIG=kernel/KernelSU/kernel/Kconfig
-          grep -q "kernelsu" "$DRIVER_MAKEFILE" || echo "obj-\$(CONFIG_KSU) += kernelsu/" >> "$DRIVER_MAKEFILE"
-          grep -q "kernelsu" "$DRIVER_KCONFIG" || sed -i "/endmenu/i\\source \"drivers/kernelsu/Kconfig\"" "$DRIVER_KCONFIG"
-
-      - name: Add KernelSU as a Git Submodule
-        run: |
-          cd kernel
-          if [ ! -d "drivers/kernelsu" ]; then
-          cd drivers
-            mkdir kernelsu
-            ln -sf kernel/KernelSU/kernel kernel/drivers/kernelsu
-           
-          fi
-
-      - name: Configure Kernel for ARM64
-        run: |
-          cd kernel
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
-          scripts/config --enable SECURITY
-          scripts/config --enable SECURITY_SELINUX
-          scripts/config --module SECURITY_SELINUX
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- oldconfig
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- prepare
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
-
-      - name: Build KernelSU LKM for ARM64
-        run: |
-          cd kernel
-          export KSU_GIT_VERSION=$(git -C drivers/kernelsu rev-parse HEAD)
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=drivers/kernelsu
+          cd /workspace/kernel
+          export PATH=/workspace/clang-aosp/bin:/workspace/gcc-64:/workspace/gcc-32:$PATH
+          make -j$(nproc --all) CC=clang O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- KCFLAGS="-Wno-error=strict-prototypes" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- lavender_defconfig
+          make -j$(nproc --all) CC=clang O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- KCFLAGS="-Wno-error=strict-prototypes" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
       - name: Upload Kernel Modules
         uses: actions/upload-artifact@v2
         with:
-          name: kernelsu_lkm
-          path: kernel/drivers/kernelsu/*.ko
+          name: hw-break
+          path: /workspace/kernel/hardware-breakpoint/*.ko
