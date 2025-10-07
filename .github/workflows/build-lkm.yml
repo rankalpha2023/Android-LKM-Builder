@@ -55,7 +55,7 @@ jobs:
           make -j$(nproc --all) CC=clang O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- KCFLAGS="-Wno-error=strict-prototypes" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
       - name: Upload Kernel Modules
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@main
         with:
           name: hw-break
           path: /workspace/kernel/hardware-breakpoint/*.ko
