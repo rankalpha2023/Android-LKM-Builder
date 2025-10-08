@@ -74,4 +74,4 @@ jobs:
         uses: actions/upload-artifact@main
         with:
           name: hw_break
-          path: $GITHUB_WORKSPACE/lkm/*.ko
+          path: $GITHUB_WORKSPACE/lkm/hw_break.ko
