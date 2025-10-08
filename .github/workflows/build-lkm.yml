@@ -23,7 +23,7 @@ jobs:
       - name: Clone LKM Source
         run: |
           cd $GITHUB_WORKSPACE
-          git clone https://github.com/rankalpha2023/hardware-breakpoint.git -b lkm
+          git clone https://github.com/rankalpha2023/hardware-breakpoint.git -b main lkm
 
       - name: Download Clang-aosp
         run: |
